@@ -1,6 +1,6 @@
 # 3D绘画生成小程序
 
-使用地址：https://imuncle.github.io/3Ddraw
+使用地址：https://imuncle.github.io/3Ddraw/
 
 这是一个可以自动生成3D绘画的程序。关于3D绘画可以直接百度图片搜索，很有意思。
 
