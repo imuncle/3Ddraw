@@ -54,3 +54,10 @@ draw.model.add_point([50,0,50]);
 draw.model.add_point([50,0,50]);
 draw.model.add_point([0,0,50]);
 ```
+
+可执行以下命令清楚所有空间点：
+```javascript
+draw.model.clear();
+```
+
+> 注意：输入命令行时，由于网页失去焦点，本着节约电脑资源的原则，程序将停止渲染。添加空间点后，需要再次点击网页才能看到效果。
