@@ -123,20 +123,7 @@ var threeD = function() {
         this.height = 210;
         this.paper_scale = 1;
         this.grid_show = false;
-        this.points = [
-            [0, this.height * this.paper_scale / 4],
-            [this.width * this.paper_scale, this.height * this.paper_scale / 4],
-            [0, this.height * this.paper_scale / 2],
-            [this.width * this.paper_scale, this.height * this.paper_scale / 2],
-            [0, this.height * this.paper_scale * 3 / 4],
-            [this.width * this.paper_scale, this.height * this.paper_scale * 3 / 4],
-            [this.width * this.paper_scale / 4, 0],
-            [this.width * this.paper_scale / 4, this.height * this.paper_scale],
-            [this.width * this.paper_scale / 2, 0],
-            [this.width * this.paper_scale / 2, this.height * this.paper_scale],
-            [this.width * this.paper_scale * 3 / 4, 0],
-            [this.width * this.paper_scale * 3 / 4, this.height * this.paper_scale]
-        ];
+        this.fold = false;  // 是否折叠
         this.corners = [
             [0, 0],
             [210, 0],
@@ -153,6 +140,10 @@ var threeD = function() {
 
         document.getElementById("grid_show").onclick = function() {
             paper.grid_show = (self.paper.grid_show == false) ? true : false;
+        }
+
+        document.getElementById("fold_paper").onclick = function() {
+            paper.fold = (self.paper.fold == false) ? true : false;
         }
     }
 
@@ -232,14 +223,35 @@ var threeD = function() {
         self.camera.rotate.set(arr1);
         self.camera.extrinsic = self.camera.rotate.dot(self.camera.extrinsic);
         context1.beginPath();
-        var point = new Matrix([[this.corners[3][0]], [0], [this.corners[3][1]], [1]]);
-        var result = self.camera.intrinsic.dot(self.camera.extrinsic).dot(point);
-        context1.moveTo(result.matrix[0][0] / result.matrix[2][0], result.matrix[1][0] / result.matrix[2][0]);
-        // 从左下角逆时针
-        for(var i = 0; i < this.corners.length; i++) {
-            point = new Matrix([[this.corners[i][0]], [0], [this.corners[i][1]], [1]]);
-            result = self.camera.intrinsic.dot(self.camera.extrinsic).dot(point);
-            context1.lineTo(result.matrix[0][0] / result.matrix[2][0], result.matrix[1][0] / result.matrix[2][0]);
+        
+        if(this.fold == false) {
+            var point = new Matrix([[this.corners[3][0]], [0], [this.corners[3][1]], [1]]);
+            var result = self.camera.intrinsic.dot(self.camera.extrinsic).dot(point);
+            context1.moveTo(result.matrix[0][0] / result.matrix[2][0], result.matrix[1][0] / result.matrix[2][0]);
+            // 从左下角逆时针
+            for(var i = 0; i < this.corners.length; i++) {
+                point = new Matrix([[this.corners[i][0]], [0], [this.corners[i][1]], [1]]);
+                result = self.camera.intrinsic.dot(self.camera.extrinsic).dot(point);
+                context1.lineTo(result.matrix[0][0] / result.matrix[2][0], result.matrix[1][0] / result.matrix[2][0]);
+            }
+        } else {
+            var corner_points = [
+                [[this.corners[0][0]], [0], [this.corners[0][1]], [1]],
+                [[this.corners[1][0]], [0], [this.corners[1][1]], [1]],
+                [[(this.corners[1][0] + this.corners[2][0])/2], [0], [(this.corners[1][1] + this.corners[2][1])/2], [1]],
+                [[(this.corners[1][0] + this.corners[2][0])/2], [-148.5], [(this.corners[1][1] + this.corners[2][1])/2], [1]],
+                [[(this.corners[0][0] + this.corners[3][0])/2], [-148.5], [(this.corners[0][1] + this.corners[3][1])/2], [1]],
+                [[(this.corners[0][0] + this.corners[3][0])/2], [0], [(this.corners[0][1] + this.corners[3][1])/2], [1]]
+            ];
+            var point = new Matrix([corner_points[5][0], corner_points[5][1], corner_points[5][2], [1]]);
+            var result = self.camera.intrinsic.dot(self.camera.extrinsic).dot(point);
+            context1.moveTo(result.matrix[0][0] / result.matrix[2][0], result.matrix[1][0] / result.matrix[2][0]);
+            // 从左下角逆时针
+            for(var i = 0; i < corner_points.length; i++) {
+                point = new Matrix([corner_points[i][0], corner_points[i][1], corner_points[i][2], [1]]);
+                result = self.camera.intrinsic.dot(self.camera.extrinsic).dot(point);
+                context1.lineTo(result.matrix[0][0] / result.matrix[2][0], result.matrix[1][0] / result.matrix[2][0]);
+            }
         }
         this.show_grid(context1);
         context1.strokeStyle = 'red';
@@ -287,7 +299,7 @@ var threeD = function() {
     // 生成图像
     var Generate = function() {}
     
-    Generate.prototype.show = function(context1, context2) {
+    Generate.prototype.show = function() {
         var context1 = self.canvas1.getContext('2d');
         var context2 = self.canvas2.getContext('2d');
         context2.clearRect(0, 0, self.canvas2.width, self.canvas2.height);
@@ -298,6 +310,11 @@ var threeD = function() {
                 var point = [j, i];
                 point = self.paper.rotate_point(point);
                 var temp_point = new Matrix([[point[0]], [0], [point[1]], [1]]);
+                if(self.paper.fold == true && i > self.paper.width / 2) {
+                    var p = [j, self.paper.width/2];
+                    p = self.paper.rotate_point(p);
+                    temp_point = new Matrix([[p[0]], [self.paper.width/2 - i], [p[1]], [1]]);
+                }
                 var result = self.camera.intrinsic.dot(self.camera.extrinsic).dot(temp_point);
                 var pixel = context1.getImageData(result.matrix[0][0] / result.matrix[2][0], result.matrix[1][0] / result.matrix[2][0], 1, 1);
                 var data = pixel.data;
@@ -310,6 +327,39 @@ var threeD = function() {
         context2.putImageData(imageData, 0, 0);
     }
 
+    var Model = function() {
+        this.model_points = [];
+    }
+
+    Model.prototype.add_point = function(point) {
+        this.model_points.push(point);
+    }
+
+    Model.prototype.show = function(context1) {
+        var model = this;
+        context1.beginPath();
+        for(var i = 0; i < model.model_points.length - 1; i+=2) {
+            var tmp_point = [model.model_points[i][0], model.model_points[i][1]];
+            tmp_point = self.paper.rotate_point(tmp_point);
+            var point = new Matrix([[tmp_point[0]], [-model.model_points[i][2]], [tmp_point[1]], [1]]);
+            var result = self.camera.intrinsic.dot(self.camera.extrinsic).dot(point);
+            context1.moveTo(result.matrix[0][0] / result.matrix[2][0], result.matrix[1][0] / result.matrix[2][0]);
+
+            tmp_point = [model.model_points[i+1][0], model.model_points[i+1][1]];
+            tmp_point = self.paper.rotate_point(tmp_point);
+            point = new Matrix([[tmp_point[0]], [-model.model_points[i+1][2]], [tmp_point[1]], [1]]);
+            result = self.camera.intrinsic.dot(self.camera.extrinsic).dot(point);
+            context1.lineTo(result.matrix[0][0] / result.matrix[2][0], result.matrix[1][0] / result.matrix[2][0]);
+        }
+        context1.strokeStyle = 'red';
+        context1.lineWidth = 1;
+        context1.stroke();
+    }
+
+    Model.prototype.clear = function() {
+        this.model_points = [];
+    }
+
     // canvas渲染类
     var render = function() {}
 
@@ -318,6 +368,7 @@ var threeD = function() {
         context1.clearRect(0, 0, self.canvas1.width, self.canvas1.height);
         self.paper.show(context1);
         self.loadImg.show(context1);
+        self.model.show(context1);
     }
 
     self.init = function() {
@@ -325,6 +376,7 @@ var threeD = function() {
         self.loadImg.init();
         self.camera = new Camera();
         self.paper = new Paper();
+        self.model = new Model();
         self.generate = new Generate();
         self.render = new render();
         self.interval = setInterval(self.render.start, 20);
@@ -343,4 +395,5 @@ var threeD = function() {
     }
 }
 
-new threeD().init();
+var draw = new threeD();
+draw.init();

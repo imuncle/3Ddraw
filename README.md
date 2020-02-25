@@ -17,3 +17,40 @@
 ![3D绘画效果](result.jpg)
 
 enjoy!
+
+# 更新日志
+
+## V1.0
+* 实现基本功能，可以调节相机角度、高度、距离，纸张角度等
+* 可添加单张图片
+* 可显示栅格，更方便调整纸张角度以适应图片
+* 一键生成3D模型
+
+## V1.1
+* 纸张可90度折叠，带来更多的3D体验
+* 可手动添加空间点。
+打开命令行输入以下命令即可。
+```javascript
+draw.model.add_point([x, y, z]);    // x, y, z是空间点的三维坐标
+```
+空间点坐标系以纸张左下角为原点，建立x轴向左、z轴向上的右手坐标系。
+
+单个点不会显示，程序显示的是空间点之间的连线，所以如果要画图形，应当以线段两端点的组合依次输入。比如下列代码实现了向空间中手动添加一个方框。
+
+```javascript
+//line 1
+draw.model.add_point([0,0,50]);
+draw.model.add_point([0,50,50]);
+
+//line 2
+draw.model.add_point([0,50,50]);
+draw.model.add_point([50,50,50]);
+
+//line 3
+draw.model.add_point([50,50,50]);
+draw.model.add_point([50,0,50]);
+
+//line 4
+draw.model.add_point([50,0,50]);
+draw.model.add_point([0,0,50]);
+```
